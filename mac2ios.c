@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include "ar.h"
 #include "macho.h"
 
@@ -15,11 +17,11 @@ void print_hdr(mach_header_64 *hdr) {
     printf("flags:         %d\n", hdr->flags);
 }
 
-// 64kb. Load Commands are limited to 16kb. 
+// 64kb. Load Commands are limited to 16kb.
 // the header is ~64bytes. So 64kb should be plenty.
 uint8_t buffer[64*1024];
 
-void patch_object(FILE *fp, size_t len) {
+void patch_object(FILE *fp, size_t len, int platform) {
     int pos = ftell(fp);
 
     fread(buffer,sizeof(buffer),1,fp);
@@ -33,8 +35,8 @@ void patch_object(FILE *fp, size_t len) {
         switch(cmd->cmd) {
             case LC_BUILD_VERSION: {
                 struct build_version_command* bvc = (struct build_version_command*)(buffer+offset);
-                printf("Chaning platform from: %d -> %d\n", bvc->platform, PLATFORM_IOS);
-                bvc->platform = PLATFORM_IOS;
+                printf("Chaning platform from: %d -> %d\n", bvc->platform, platform);
+                bvc->platform = platform;
                 fseek(fp, pos+offset, SEEK_SET);
                 fwrite(buffer+offset, sizeof(struct build_version_command), 1, fp);
             }
@@ -54,7 +56,7 @@ uint32_t parse_ar_size(char *s, size_t maxlen) {
     return ret;
 }
 
-int parse_archive(FILE *fp) {
+int parse_archive(FILE *fp, int platform) {
     int pos = ftell(fp);
 
     char magic[8];
@@ -77,7 +79,7 @@ int parse_archive(FILE *fp) {
             strncpy(ident, entry.ident, 16);
         }
         printf("%6zu %s\n", payload, ident);
-        patch_object(fp, payload);
+        patch_object(fp, payload, platform);
         fseek(fp, payload, SEEK_CUR);
     }
     fseek(fp, pos, SEEK_SET);
@@ -86,16 +88,44 @@ int parse_archive(FILE *fp) {
 
 int main(int argc, char ** argv) {
 
-    FILE *ptr;
+    opterr = 0;
+    int c;
+    int platform = PLATFORM_IOS;
 
-    ptr = fopen(argv[1],"rb+");
-    if(NULL == ptr) {
-        printf("Failed to open %s\n", argv[1]);
-        return 1;
+    while ((c = getopt(argc, argv, "hs")) != -1) {
+        switch (c)
+        {
+        case 'h':
+            printf("mac2ios -- tool to rewrite the platform in object files\n");
+            printf("Usage: mac2ios FILE\n");
+            printf(" -h show this help message\n");
+            printf(" -s set platform to IOSSIMULATOR\n");
+            printf(" by default we set IOS\n");
+            return EXIT_SUCCESS;
+
+        case 's':
+            platform = PLATFORM_IOSSIMULATOR;
+            break;
+        default:
+            break;
+        }
     }
 
-    int ret = parse_archive(ptr);
-    // patch_object(fp);
+    FILE *ptr;
+
+    if(optind == argc) {
+        printf("expecting FILE argument.");
+        return EXIT_FAILURE;
+    }
+
+    ptr = fopen(argv[optind],"rb+");
+    if(NULL == ptr) {
+        printf("Failed to open %s\n", argv[1]);
+        return EXIT_FAILURE;
+    }
+
+    int ret = parse_archive(ptr, platform);
     fclose(ptr);
+
     return ret;
 }
