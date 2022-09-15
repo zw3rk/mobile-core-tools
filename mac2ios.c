@@ -28,6 +28,14 @@ void patch_object(FILE *fp, size_t len, int platform) {
 
     mach_header_64 *hdr = (mach_header_64*)buffer;
 
+    if (!(  hdr->magic == 0xfeedface      // 32-bit
+         || hdr->magic == 0xfeedfacf      // 64-bit
+         || hdr->magic == 0xcafebabe )) { // Universal
+      // Object is not Mach-O
+      fseek(fp, pos, SEEK_SET);
+      return;
+    }
+
     size_t offset = sizeof(mach_header_64);
     load_command *cmd;
     while(offset < sizeof(mach_header_64) + hdr->sizeofcmds) {
