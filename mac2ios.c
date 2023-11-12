@@ -89,7 +89,9 @@ int parse_archive(FILE *fp, int platform) {
             strncpy(ident, entry.ident, 16);
         }
         printf("%6zu %s\n", payload, ident);
-        patch_object(fp, payload, platform);
+        // skip the __.SYMDEF and __.SYMDEF SORTED files.
+        if(0 != strncmp(ident, "__.SYMDEF", 9))
+            patch_object(fp, payload, platform);
         fseek(fp, payload, SEEK_CUR);
     }
     fseek(fp, pos, SEEK_SET);
