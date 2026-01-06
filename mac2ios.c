@@ -134,7 +134,7 @@ int main(int argc, char ** argv) {
     FILE *ptr;
 
     if(optind == argc) {
-        printf("expecting FILE argument.");
+        printf("expecting FILE argument.\n");
         return EXIT_FAILURE;
     }
 
