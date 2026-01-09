@@ -44,7 +44,7 @@ void patch_object(FILE *fp, size_t len, int platform) {
             /* old style LC_VERSION_MIN_<platofrm> rewrites */
             case LC_VERSION_MIN_MACOSX: {
                 cmd->cmd = LC_VERSION_MIN_IPHONEOS;
-                printf("Chaning LC_VERSION_MIN_ from: %d -> %d\n", LC_VERSION_MIN_MACOSX, LC_VERSION_MIN_IPHONEOS);
+                printf("Changing LC_VERSION_MIN_ from: %d -> %d\n", LC_VERSION_MIN_MACOSX, LC_VERSION_MIN_IPHONEOS);
                 fseek(fp, pos+offset, SEEK_SET);
                 fwrite(buffer+offset, sizeof(struct build_version_command), 1, fp);
                 break;
@@ -52,7 +52,7 @@ void patch_object(FILE *fp, size_t len, int platform) {
             /* new style LC_BUILD_VERSION rewrites */
             case LC_BUILD_VERSION: {
                 struct build_version_command* bvc = (struct build_version_command*)(buffer+offset);
-                printf("Chaning platform from: %d -> %d\n", bvc->platform, platform);
+                printf("Changing platform from: %d -> %d\n", bvc->platform, platform);
                 bvc->platform = platform;
                 fseek(fp, pos+offset, SEEK_SET);
                 fwrite(buffer+offset, sizeof(struct build_version_command), 1, fp);
