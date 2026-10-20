@@ -23,6 +23,7 @@
         packages.mac2ios = pkgs.stdenv.mkDerivation {
           name = "mac2ios";
           src = ./.;
+          buildFlags = [ "all" ];
           # buildInputs = [ ];
           # buildPhase = ''
           #   make
